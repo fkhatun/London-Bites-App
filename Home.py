@@ -280,6 +280,7 @@ st.sidebar.title("🍽️ London Bites")
 menu = st.sidebar.radio("Select an option:", ["Login", "Register"])
 
 # ---- LOGIN SECTION ----
+# login details
 if menu == "Login":
     st.sidebar.subheader("🔑Login")
     # Input field for username.
