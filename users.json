@@ -1,0 +1,34 @@
+{
+    "fateha1104": {
+        "name": "Fateha Khatun ",
+        "password": "$2b$12$v8iVwRTFcMiQviEsNx5rKe4bxZKCQb4tcyv7JAq1vXRHVv6I8iGV2",
+        "user_id": 1,
+        "favourites": [
+            "Ariana Restaurant "
+        ],
+        "saved_recommendations": [],
+        "ratings": {
+            "Lara Grill ": 4
+        },
+        "reviews": {
+            "Bayleaf ": "really good food ",
+            "Nando's Bromley ": "very friendly staff \ngood vibes ",
+            "Lara Grill ": "the food was really nice, good ambiance, affordable, staff was friendly "
+        },
+        "following": [
+            "Raihana97"
+        ]
+    },
+    "Raihana97": {
+        "name": "Raihana Khatun",
+        "password": "$2b$12$Yjy/37GXaewZ6uIefhumUuwOKOSaf94hjEFLB7UZfMxJH2rLdC5nW",
+        "user_id": 2,
+        "favourites": [],
+        "saved_recommendations": [],
+        "ratings": {},
+        "reviews": {},
+        "following": [
+            "fateha1104"
+        ]
+    }
+}
