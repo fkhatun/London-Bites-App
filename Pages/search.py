@@ -20,14 +20,13 @@ DATASET_PATH = "London dataset.csv"
 
 
 # Function to load user data from the JSON file.
-def load_users():
+def load_users():  # Loads user data from the JSON file and ensures default keys exist.
     if os.path.exists(USER_DATA_FILE):
         with open(USER_DATA_FILE, "r") as file:
             users = json.load(file)  # Load the JSON data into a Python dictionary.
     else:
-        users = {}
-
-    # Ensure each user dictionary has required keys initialized.
+        users = {}  # If the file doesn't exist, start with an empty dictionary.
+    # For each user, ensure default keys are present.
     for user in users:
         users[user].setdefault("favourites", [])
         users[user].setdefault("saved_recommendations", [])
@@ -38,26 +37,29 @@ def load_users():
 
 # Function to save user data to the JSON file.
 def save_users(users):
-    with open(USER_DATA_FILE, "w") as file:
-        json.dump(users, file, indent=4)  # Save the dictionary as a JSON file with indentation.
-    return load_users()  # Reload the users after saving.
+    with open(USER_DATA_FILE, "w") as file:  # Open the user data file (USER_DATA_FILE) in write mode. This will overwrite the existing file with the updated user data
+        json.dump(users, file, indent=4)  # Convert the 'users' dictionary into JSON format and write it to the file
+        # The 'indent=4' makes the JSON output nicely formatted and readable
+    return load_users()  # Reload and return the updated dictionary.
 
 
-# Function to load the restaurant dataset.
+# Function to load the restaurant dataset from a CSV file.
 @st.cache_data
 def load_restaurant_data():
     if not os.path.exists(DATASET_PATH):
         st.error("Dataset file not found.")
-        return None
-
+        return None  # Return None if the dataset file doesn't exist.
     try:
-        df = pd.read_csv(DATASET_PATH)  # Read CSV file into a pandas DataFrame.
-        df.columns = df.columns.str.lower()  # Convert column names to lowercase.
+        df = pd.read_csv(DATASET_PATH)  # Load the dataset into a pandas DataFrame
+        df.columns = df.columns.str.lower()  # Convert all column names to lowercase.
+        # checking that the 'cuisine' column exists in the dataset
         if "cuisine" not in df.columns:
             st.error("Error: 'cuisine' column not found.")
             return None
-        return df.dropna(subset=["cuisine"])  # Drop rows where the 'cuisine' column has missing values.
+        # Return the DataFrame, dropping any rows where the 'cuisine' value is missing.
+        return df.dropna(subset=["cuisine"])
     except Exception as e:
+        # Handle any unexpected errors during file reading
         st.error(f"Error loading dataset: {e}")
         return None
 
@@ -74,13 +76,11 @@ borough_options = ["All"] + sorted(df["borough"].unique()) if df is not None els
 def recommend_restaurants_content(selected_cuisine, top_n=100):
     df = load_restaurant_data()  # Reload the restaurant dataset.
     if df is None:
-        return []
+        return []  # Return an empty list if the dataset couldn't be loaded.
 
-    # Create a TF-IDF vectorizer and compute the matrix for the 'cuisine' column.
-    vectorizer = TfidfVectorizer()
+    vectorizer = TfidfVectorizer() # Initialise a TfidfVectorizer to transform the 'cuisine' column into TF-IDF features.
     cuisine_matrix = vectorizer.fit_transform(df["cuisine"].astype(str))
-    # Compute cosine similarity between all restaurant cuisines.
-    cosine_sim = cosine_similarity(cuisine_matrix)
+    cosine_sim = cosine_similarity(cuisine_matrix)  # Calculate cosine similarity between the TF-IDF vectors.
 
     # Find indices where the 'cuisine' contains the selected cuisine (case insensitive).
     indices = df[df["cuisine"].str.contains(selected_cuisine, case=False, na=False)].index.tolist()
@@ -101,10 +101,8 @@ def train_collaborative_model():
         return None
 
     reader = Reader(rating_scale=(1, 5))
-    # Create a Surprise dataset from the DataFrame.
-    data = Dataset.load_from_df(df[["borough", "user_id", "restaurant_id", "rating"]], reader)
-    # Split the dataset into training and testing sets.
-    trainset, _ = train_test_split(data, test_size=0.2, random_state=42)
+    data = Dataset.load_from_df(df[["borough", "user_id", "restaurant_id", "rating"]], reader)  # Create a Surprise dataset from the DataFrame.
+    trainset, _ = train_test_split(data, test_size=0.2, random_state=42)  # Split the dataset into training and testing sets.
 
     model = SVD()  # Initialize the SVD model.
     model.fit(trainset)  # Train the model on the training data.
@@ -149,7 +147,8 @@ def hybrid_recommend(user_id, selected_cuisine, top_n=100):
     return predictions[:top_n]
 
 
-# ---- Session State Initialization ----
+#  Session State Initialisation
+# Initialise session state variables if they are not already set.
 if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
 if "user_id" not in st.session_state:
@@ -157,82 +156,85 @@ if "user_id" not in st.session_state:
 if "username" not in st.session_state:
     st.session_state["username"] = ""
 
-# Load the users data.
+# Load the user data.
 users = load_users()
 
-# ---- Sidebar Navigation ----
+# Sidebar Navigation
 st.sidebar.title("🍽️ London Bites")
-# Sidebar radio buttons for login and registration.
-menu = st.sidebar.radio("Select an option:", ["Login", "Register"])
+menu = st.sidebar.radio("Select an option:", ["Login", "Register"], key="auth_radio")
 
-# ---- LOGIN SECTION ----
+
+# Login section
 if menu == "Login":
-    st.sidebar.subheader("🔑 Login")
-    username = st.sidebar.text_input("Username")
-    password = st.sidebar.text_input("Password", type="password")
-    login_button = st.sidebar.button("Login")
-
+    st.sidebar.subheader("🔑Login")
+    username = st.sidebar.text_input("Username")  # Input field for username.
+    password = st.sidebar.text_input("Password", type="password")  # Input field for password (hidden).
+    login_button = st.sidebar.button("Login")  # Button to trigger login.
     if login_button:
-        # Check if username exists and password matches using bcrypt.
-        if username in users and bcrypt.checkpw(password.encode(), users[username]["password"].encode()):
+        if username in users and bcrypt.checkpw(password.encode(), users[username]["password"].encode()):  # Check if username exists and if the password matches using bcrypt.
+            # Update session state variables to mark the user as authenticated.
             st.session_state["authenticated"] = True
             st.session_state["username"] = username
             st.session_state["user_id"] = users[username]["user_id"]
-            st.sidebar.success(f"✅ Welcome, {users[username]['name']}! 🎉")
+            st.sidebar.success(f"✅Welcome, {users[username]['name']}!🎉")
         else:
-            st.sidebar.error("❌ Invalid username or password!")
+            st.sidebar.error("❌Invalid username or password!")
 
-# ---- REGISTER SECTION ----
-elif menu == "📝Register":
-    st.sidebar.subheader("Create an Account")
-
+# Register Section
+elif menu == "Register":
+    st.sidebar.subheader("📝 Create an Account")
+    # Input fields for new user registration.
     new_username = st.sidebar.text_input("Choose a Username")
     new_name = st.sidebar.text_input("Full Name")
     new_password = st.sidebar.text_input("Choose a Password", type="password")
     confirm_password = st.sidebar.text_input("Confirm Password", type="password")
-
     if st.sidebar.button("Register"):
-        # Check if the username already exists.
-        if new_username in users:
-            st.sidebar.error("Username already exists!")
-        # Check if both password fields match.
+        users = load_users()  # Reload users to ensure the latest data.
+        # Validate that all fields are provided.
+        if not new_username or not new_name or not new_password or not confirm_password:
+            st.sidebar.error("⚠️ All fields are required!")
+        elif new_username in users:
+            st.sidebar.error("❌ Username already exists! Choose a different one.")
         elif new_password != confirm_password:
-            st.sidebar.error("⚠️Passwords do not match!")
+            st.sidebar.error("⚠️ Passwords do not match!")
         else:
-            user_id = len(users) + 1  # Generate a new user ID.
-            # Hash the password using bcrypt.
-            hashed_password = bcrypt.hashpw(new_password.encode(), bcrypt.gensalt()).decode()
+            try:
+                user_id = len(users) + 1  # Generate a new user_id.
+                hashed_password = bcrypt.hashpw(new_password.encode(), bcrypt.gensalt()).decode()  # Hash the password.
+                # Create a new user entry with all required fields.
+                users[new_username] = {
+                    "name": new_name,
+                    "password": hashed_password,
+                    "user_id": user_id,
+                    "favourites": [],
+                    "saved_recommendations": [],
+                    "ratings": {},
+                    "reviews": {},
+                    "following": []  # Initialise following as an empty list.
+                }
+                # Save the updated user data.
+                save_users(users)
+                st.sidebar.success("🎉 Account created! Please log in.")
+            except Exception as e:
+                st.sidebar.error(f"Error creating account: {e}")
 
-            # Create a new user dictionary with all required fields.
-            users[new_username] = {
-                "name": new_name,
-                "password": hashed_password,
-                "user_id": user_id,
-                "favourites": [],
-                "saved_recommendations": [],
-                "ratings": {},
-                "reviews": {},
-                "following": []
-            }
-            save_users(users)
-            st.sidebar.success("🎉Account created! Please log in.")
-
-# ---- LOGOUT SECTION ----
+# Logout section
 if st.session_state["authenticated"]:
-    if st.sidebar.button("🚪 Logout"):
-        st.session_state.clear()  # Clear session state on logout.
-        st.sidebar.success("✅ Logged out!")
+    if st.sidebar.button("🚪Logout"):  # Provide a logout button if the user is authenticated.
+        st.session_state.clear()  # Clear session state to log out.
+        st.sidebar.success("✅Logged out!")
 
-# ---- Search Page Section ----
+
+# Search Page Section
 if st.session_state["authenticated"]:
     st.title("🔍 Search Restaurants")
 
-    # Text input for searching by restaurant name or keyword.
-    search_query = st.text_input("Search by restaurant name or keyword")
-    # Dropdown for selecting a borough.
-    selected_borough = st.selectbox("Select a borough:", borough_options)
-    # Dropdown for selecting a cuisine.
-    selected_cuisine = st.selectbox("Select a cuisine:", cuisine_options)
+    # Sidebar Menu Navigation
+    menu = st.sidebar.radio("Go to", ["Search"], key="main_menu")
+
+    search_query = st.text_input("Search by restaurant name or keyword")  # Text input for searching by restaurant name or keyword.
+    selected_borough = st.selectbox("Select a borough:", borough_options)  # Dropdown for selecting a borough.
+    selected_cuisine = st.selectbox("Select a cuisine:", cuisine_options)  # Dropdown for selecting a cuisine.
 
     # Inputs for user's current latitude and longitude.
     user_lat = st.number_input("Enter your latitude", value=51.5074)
@@ -243,14 +245,11 @@ if st.session_state["authenticated"]:
     if search_button:
         filtered_df = df.copy()
 
-        # Filter the DataFrame based on the search query if provided.
-        if search_query:
+        if search_query: # Filter the DataFrame based on the search query if provided.
             filtered_df = filtered_df[filtered_df["name"].str.contains(search_query, case=False, na=False)]
-        # Filter by borough if "All" is not selected.
-        if selected_borough != "All":
+        if selected_borough != "All": # Filter by borough if "All" is not selected.
             filtered_df = filtered_df[filtered_df["borough"] == selected_borough]
-        # Filter by cuisine if "All" is not selected.
-        if selected_cuisine != "All":
+        if selected_cuisine != "All": # Filter by cuisine if "All" is not selected.
             filtered_df = filtered_df[filtered_df["cuisine"] == selected_cuisine]
 
         if filtered_df.empty:
