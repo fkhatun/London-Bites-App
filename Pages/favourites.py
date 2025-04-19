@@ -32,7 +32,8 @@ def load_users():  # Loads user data from the JSON file and ensures default keys
 
 # Function to save user data to the JSON file.
 def save_users(users):
-    with open(USER_DATA_FILE, "w") as file:  # Open the user data file (USER_DATA_FILE) in write mode. This will overwrite the existing file with the updated user data
+    with open(USER_DATA_FILE,
+              "w") as file:  # Open the user data file (USER_DATA_FILE) in write mode. This will overwrite the existing file with the updated user data
         json.dump(users, file, indent=4)  # Convert the 'users' dictionary into JSON format and write it to the file
         # The 'indent=4' makes the JSON output nicely formatted and readable
     return load_users()  # Reload and return the updated dictionary.
@@ -62,6 +63,18 @@ def load_restaurant_data():
 df = load_restaurant_data()
 
 
+def get_updated_rating(restaurant):
+    # Calculate the average rating for a restaurant based on user ratings.
+    # If no user ratings exist, return None.
+    # Create a list of ratings for the restaurant from all users.
+    ratings = [users[user]["ratings"].get(restaurant) for user in users if restaurant in users[user]["ratings"]]
+    ratings = [r for r in ratings if r is not None]  # Remove any None values from the list.
+    # If there are ratings available, compute the average and round it to 2 decimal places.
+    if ratings:
+        return round(sum(ratings) / len(ratings), 2)
+    return None  # Return None if there are no ratings.
+
+
 # Session State Initialisation
 # Initialise session state variables if not already set.
 if "authenticated" not in st.session_state:
@@ -76,7 +89,8 @@ users = load_users()
 
 # Sidebar Navigation
 st.sidebar.title("🍽️ London Bites")
-menu = st.sidebar.radio("Select an option:", ["Login", "Register"])  # Create a sidebar radio selection for "Login" and "Register".
+menu = st.sidebar.radio("Select an option:",
+                        ["Login", "Register"])  # Create a sidebar radio selection for "Login" and "Register".
 
 # Login section
 if menu == "Login":
@@ -85,7 +99,8 @@ if menu == "Login":
     password = st.sidebar.text_input("Password", type="password")  # Input field for password (hidden).
     login_button = st.sidebar.button("Login")  # Button to trigger login.
     if login_button:
-        if username in users and bcrypt.checkpw(password.encode(), users[username]["password"].encode()):  # Check if username exists and if the password matches using bcrypt.
+        if username in users and bcrypt.checkpw(password.encode(), users[username][
+            "password"].encode()):  # Check if username exists and if the password matches using bcrypt.
             # Update session state variables to mark the user as authenticated.
             st.session_state["authenticated"] = True
             st.session_state["username"] = username
@@ -167,13 +182,12 @@ if st.session_state.get("authenticated") and menu == "Favourites":
             rating = fav_data["rating"].values[0] if "rating" in fav_data.columns else "N/A"
             borough = fav_data["borough"].values[0] if "borough" in fav_data.columns else "N/A"
             halal = fav_data["halal"].values[0] if "halal" in fav_data.columns else None
-            halal_status = "Yes" if halal else "No" if halal is not None else "Not specified"
 
             # Display restaurant details
             st.write(f"### {fav}")
             st.write(f"📍 **Location**: {borough}")
             st.write(f"⭐ **Rating**: {rating}")
-            st.write(f"حَلَال **Halal**: {halal_status}")
+            st.write(f"حَلَال **Halal**: {halal}")
 
             # Remove from favourites button
             if st.button(f"Remove {fav} from Favourites", key=f"remove_{fav}"):
@@ -181,3 +195,4 @@ if st.session_state.get("authenticated") and menu == "Favourites":
                 save_users(users)  # Save updated user data
                 st.success(f"{fav} has been removed from your favourites!")  # Notify the user
                 st.rerun()  # Refresh the page to reflect changes
+

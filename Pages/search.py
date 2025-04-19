@@ -261,7 +261,7 @@ if st.session_state["authenticated"]:
                 user_location = (user_lat, user_lng)
                 distance = geodesic(user_location, rest_location).km
 
-                st.write(f"### {row['name']} - ⭐ {row['rating']}")
+                st.write(f"### {row['name']}")
                 st.write(f"📍 *Location**: {row['borough']}")
                 st.write(f"🍟 **Cuisine**: {row['cuisine']}")
                 st.write(f"📍 Distance: {distance:.2f} km away")
@@ -273,7 +273,7 @@ if st.session_state["authenticated"]:
             st.write("### Recommended Restaurants:")
             # Iterate over recommendations and display details.
             for row, rating in recommendations:
-                st.write(f"### {row['name']} - ⭐ {row['rating']}")
+                st.write(f"### {row['name']}")
                 st.write(f"📍 *Location**: {row['borough']}")
                 st.write(f"🍟 **Cuisine**: {row['cuisine']}")
                 st.write(f" حَلَال **Halal**: {row.get('halal', 'N/A')}")

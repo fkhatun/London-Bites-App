@@ -336,10 +336,12 @@ if st.session_state["authenticated"]:
                     halal = restaurant_data["halal"].values[0] if "halal" in restaurant_data.columns else None
                     review_text = restaurant_data["reviews"].values[
                         0] if "reviews" in restaurant_data.columns else "No reviews available."
+
                     # Display restaurant details.
                     st.write(f"### {restaurant}")
                     st.write(f"📍 **Location**: {borough}")
                     st.write(f"حَلَال **Halal**: {halal}")
+
                     # Add to favourites button.
                     if st.button(f"Add {restaurant} to Favourites ❤️", key=f"fav_{restaurant}"):
                         if restaurant not in users[st.session_state["username"]]["favourites"]:
@@ -348,6 +350,7 @@ if st.session_state["authenticated"]:
                             st.success(f"{restaurant} has been added to your favourites!")
                         else:
                             st.warning(f"{restaurant} is already in your favourites")
+
                     # Get the latest rating for the restaurant based on user ratings.
                     updated_rating = get_updated_rating(restaurant)
                     st.write(
@@ -357,6 +360,7 @@ if st.session_state["authenticated"]:
                     review_input = st.text_area(f"Your review for {restaurant}", key=f"review_{restaurant}")
                     user_rating = st.slider("Rate this restaurant (1-5):", min_value=1, max_value=5, value=3,
                                             key=f"rating_{restaurant}")
+
                     # Button to submit the review and rating.
                     if st.button(f"Submit review for {restaurant}", key=f"submit_review_{restaurant}"):
                         if st.session_state["username"] in users:
@@ -366,6 +370,7 @@ if st.session_state["authenticated"]:
                             st.success(f"Review submitted! Updated Rating: {updated_rating}⭐")
                         else:
                             st.warning("You must be logged in to submit a review.")
+
                     # Display reviews from other users.
                     st.write("### Reviews from Other Users:")
                     other_reviews = [
@@ -377,6 +382,7 @@ if st.session_state["authenticated"]:
                             st.write(review)
                     else:
                         st.write("No reviews from other users yet.")
+
                     # Display Google Reviews with sentiment.
                     if google_reviews:
                         st.write("### Google Reviews with Sentiment:")
