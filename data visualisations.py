@@ -10,11 +10,11 @@ df = pd.read_csv(file_path)
 print(df.info())
 print(df.head())
 
-# Set style
+# Set seaborn style
 sns.set(style="whitegrid")
 
 # === Chart 1: Number of Restaurants per Borough ===
-plt.figure(figsize=(10, 6))  # Set figure size for the first plot
+plt.figure(figsize=(10, 6))
 borough_counts = df["borough"].value_counts().reset_index()
 borough_counts.columns = ["borough", "count"]
 
@@ -24,11 +24,11 @@ plt.xlabel("Count")
 plt.ylabel("Borough")
 
 plt.tight_layout()
-plt.savefig("Number of Restaurants per Borough.png")
+plt.savefig("Number_of_Restaurants_per_Borough.png")
 plt.show()
 
 # === Chart 2: Top 10 Cuisines in London ===
-plt.figure(figsize=(10, 6))  # Set figure size for the second plot
+plt.figure(figsize=(10, 6))
 top_cuisines = df["cuisine"].value_counts().head(10).reset_index()
 top_cuisines.columns = ["cuisine", "count"]
 
@@ -38,47 +38,56 @@ plt.xlabel("Count")
 plt.ylabel("Cuisine")
 
 plt.tight_layout()
-plt.savefig("Top 10 Cuisines.png")
+plt.savefig("Top_10_Cuisines.png")
 plt.show()
 
-# 2. Halal vs Non-Halal Restaurant Count
+# === Chart 3: Halal vs Non-Halal Restaurant Count ===
 
-# Combine 'Halal' and 'halal' columns and standardize values
-df['is_halal'] = df[['Halal', 'halal']].bfill(axis=1).iloc[:, 0]
-halal_counts = df['is_halal'].value_counts()
+# Combine 'Halal' and 'halal' columns (handle casing inconsistency)
+if 'Halal' in df.columns and 'halal' in df.columns:
+    df['is_halal'] = df[['Halal', 'halal']].bfill(axis=1).iloc[:, 0]
+elif 'halal' in df.columns:
+    df['is_halal'] = df['halal']
+elif 'Halal' in df.columns:
+    df['is_halal'] = df['Halal']
+else:
+    raise KeyError("No 'halal' or 'Halal' column found in the dataset.")
 
-# 2. Halal vs Non-Halal Restaurant Count
+# Standardize values (to lowercase and consistent tags)
+df['is_halal'] = df['is_halal'].astype(str).str.strip().str.lower()
+df['is_halal'] = df['is_halal'].replace({
+    'yes': 'halal', 'true': 'halal', '1': 'halal',
+    'no': 'non-halal', 'false': 'non-halal', '0': 'non-halal'
+})
+df['is_halal'] = df['is_halal'].where(df['is_halal'].isin(['halal', 'non-halal']), 'unknown')
 
-# Combine 'Halal' and 'halal' columns and standardize values
-df['is_halal'] = df[['Halal', 'halal']].bfill(axis=1).iloc[:, 0]
+# Count values
 halal_counts = df['is_halal'].value_counts()
 
 # Plot
-plt.figure()
+plt.figure(figsize=(6, 4))
 sns.barplot(x=halal_counts.index, y=halal_counts.values, palette="Set2")
 plt.title("Halal vs Non-Halal Restaurant Count")
 plt.xlabel("Halal Certified")
 plt.ylabel("Number of Restaurants")
 plt.tight_layout()
-plt.savefig("Halal vs Non-Halal Restaurant Count.png")
+plt.savefig("Halal_vs_Non-Halal_Restaurant_Count.png")
 plt.show()
 
-# Filter valid latitude and longitude entries
-location_df = df[['lat', 'lng']].dropna()
+# === Chart 4: Restaurant Locations Scatter Plot ===
 
-# Scatter plot
-plt.figure(figsize=(10, 8))
-sns.scatterplot(data=location_df, x='lng', y='lat', alpha=0.5, s=40, color='darkred')
-plt.title("Restaurant Locations in London")
-plt.xlabel("Longitude")
-plt.ylabel("Latitude")
-plt.grid(True)
-plt.tight_layout()
-plt.savefig("Restaurant Locations in London.png")
-plt.show()
+# Check if lat/lng columns exist
+if 'lat' in df.columns and 'lng' in df.columns:
+    location_df = df[['lat', 'lng']].dropna()
 
-
-
-
-
-
+    plt.figure(figsize=(10, 8))
+    sns.scatterplot(data=location_df, x='lng', y='lat', alpha=0.5, s=40, color='darkred')
+    plt.title("Restaurant Locations in London")
+    plt.xlabel("Longitude")
+    plt.ylabel("Latitude")
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig("Restaurant_Locations_in_London.png")
+    plt.show()
+else:
+    print("Latitude and longitude columns not found in dataset.")
